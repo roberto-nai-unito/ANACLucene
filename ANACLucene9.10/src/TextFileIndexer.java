@@ -11,6 +11,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+// import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.FSDirectory;
@@ -34,51 +35,64 @@ public class TextFileIndexer
 	// Variabile d'istanza (Lucene)
     private IndexWriter writer; // --> IndexWriter
     
+    private final static int SCORETOP = 5; // prende i primi SCORETOP migliori risultati (in base allo score)
+    
+    private final static double SCORELIMIT = 5; // limite sotto il quale non considerare il risultato
 
 	public static void main(String[] args) throws IOException 
 	{
 		// Cartella dove Lucene salverà l'indicizzazione
 		String indexLocation = "/Volumes/SAMSUNG-DOC/PhD Informatica 2021/Lucene - Ricerca testi/sentences_txt/Lucene-Index"; 
 		
-		// Cartella contenente i file da indicizzare (le cartelle delle sentenze --> _Pagina_xxx)
-        String fileLocation = "/Volumes/SAMSUNG-DOC/PhD Informatica 2021/Lucene - Ricerca testi/sentences_txt/_Pagina_0-500";
+		// Cartella contenente i file da indicizzare (le cartelle delle sentenze)
+        String fileLocation = "/Volumes/SAMSUNG-DOC/PhD Informatica 2021/Python - Giustizia Amministrativa v2/sentences";
 
         // Creazione del file indice
         TextFileIndexer indexer = null;
         
         // Stringa contenente il testo da cercare
-        String searchTerm = null;
+        // String searchTerm = null;
+        
+        // Avviare l'indicizzazione (0 = no, 1 = si)
+        int indexing = 0;
+        
+        
+        // Tipo di dato cercato, vedere Research e ResearchType
+        Research researchType = new Research(ResearchType.AGG_DEN); 
         
         // 1 - INDICIZZAZIONE
-        
-        System.out.println("");
-        System.out.println("************************");
-        System.out.println("1 - INDEXING TASK");
-        System.out.println("");
-        
-        try 
+        if (indexing==1)
         {
-        	// 1.1 Crea il file indice
-            indexer = new TextFileIndexer(indexLocation); 
-        } 
-        catch (Exception e) 
-        {
-            System.out.println("Cannot create index..." + e.getMessage());
-            System.exit(-1);
-        }  
-        try 
-        {              
-            // 1.1 Indicizza i file
-            indexer.indexFileOrDirectory(fileLocation);  
-        } 
-		catch (Exception e) 
-        {
-			System.out.println("Error indexing " + fileLocation + " : " + e.getMessage());
+        	System.out.println("");
+            System.out.println("************************");
+            System.out.println("1 - INDEXING TASK");
+            System.out.println("");
+            
+            try 
+            {
+            	// 1.1 Crea il file indice
+                indexer = new TextFileIndexer(indexLocation); 
+            } 
+            catch (Exception e) 
+            {
+                System.out.println("Cannot create index file: " + e.getMessage());
+                System.exit(-1);
+            }  
+            try 
+            {              
+                // 1.1 Indicizza i file
+                indexer.indexFileOrDirectory(fileLocation);  
+            } 
+    		catch (Exception e) 
+            {
+    			System.out.println("Error indexing the file \"" + fileLocation + "\": " + e.getMessage());
+            }
+            
+         
+            // Richiamare sempre closeIndex, altrimenti l'indice non viene creato
+            indexer.closeIndex();
         }
         
-     
-        // Richiamare sempre closeIndex, altrimenti l'indice non viene creato
-        indexer.closeIndex();
         
         // 2 - RICERCA
         
@@ -87,15 +101,30 @@ public class TextFileIndexer
         System.out.println("2 - QUERY TASK");
         System.out.println("");
         
-        searchTerm = "Termoidraulica"; // @TODO-1: estrarre i searchTerm dai file CSV dei CIG e CF
+        // 2.1 - Estrazione dei dati da cercare
         
-        System.out.println("Searched term: " + searchTerm);
+        // List<String> procurementList = Procurement.getProcurementData(data_in); 
+        List<String> procurementList = Procurement.getProcurementData(researchType); 
+        System.out.println("Number of terms to be searched: " + procurementList.size());
         System.out.println("");
-     
+        
+        // 2.2 ricerca in Lucene
+        
+        // searchTerm = "Termoidraulica"; 
+        
+        List<Result> resultList = new ArrayList<Result>(); 
+        
+        /*
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexLocation).toPath()));
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopScoreDocCollector collector = TopScoreDocCollector.create(5, 20);
-        
+        TopScoreDocCollector collector = TopScoreDocCollector.create(5, Integer.MAX_VALUE); 
+        // originale (5, 20) --> limiti di migliori hits da considerare (minimo 5, massimo 20)
+        */
+                
+        // singola ricerca (un solo termine)
+        /*
+        String searchTerm = "Termoidraulica"; 
+       
         try 
         {
         	Query q = new QueryParser("contents", analyzer).parse(searchTerm);
@@ -105,20 +134,88 @@ public class TextFileIndexer
 	        // Visualizza i risultati
 	        
 	        System.out.println("Hits found: " + hits.length);
+	        System.out.println("Total hits: " + collector.getTotalHits());
+	   
+	        
 	        System.out.println("");
-	        for(int i=0;i<hits.length;++i) 
+	        
+	        for(int i=0; i<hits.length; i++) 
 	        {
 	            int docId = hits[i].doc;
 	            Document d = searcher.doc(docId);
-	            System.out.println((i + 1) + ". " + d.get("path") + " score=" + hits[i].score); 
-	            // @TODO-2: salvare i risultati su CSV nella forma searchTerm;_Pagina_xxx/file;score
+	            System.out.println((i + 1) + ") " + d.get("path") + ";score=" + hits[i].score); 
+	            Result r = new Result(searchTerm,d.get("path"),hits[i].score);
+	            resultList.add(r);
 	        }
         }
         catch (Exception e) 
         {
-			System.out.println("Error searching " + searchTerm + " : " + e.getMessage());
+			System.out.println("Error searching \"" + searchTerm + "\": " + e.getMessage());
         }
+        */
+       
         
+        // ricerca su più termini
+        int j = 0; // contatore della posizione della ricerca
+        
+        for (String searchTerm : procurementList) 
+		{
+        	j++;
+        	System.out.println("");
+			System.out.println(j + ") Searched term: " + searchTerm);
+	        System.out.println("");
+	        try 
+	        {
+	        	// Attiva gli oggetti per la ricerca
+	        	IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexLocation).toPath()));
+	            IndexSearcher searcher = new IndexSearcher(reader);
+	            TopScoreDocCollector collector = TopScoreDocCollector.create(SCORETOP, Integer.MAX_VALUE); 
+	            // i primi 3 top score fino al massimo (l'originale era 5,20)
+	            
+	        	// Esegue la query sul termine
+	        	Query q = new QueryParser("contents", analyzer).parse(searchTerm);
+		        searcher.search(q, collector);
+		        ScoreDoc[] hits = collector.topDocs().scoreDocs;
+		        
+		        
+		        // Visualizza i risultati
+		        
+		        System.out.println("Hits found: " + hits.length);
+		        // System.out.println("Total hits (overall): " + collector.getTotalHits());
+		        
+		        for(int i=0; i<hits.length;++i) 
+		        {
+		            int docId = hits[i].doc;
+		            Document d = searcher.doc(docId);
+		            System.out.println((i + 1) + ". " + d.get("path") + " score=" + hits[i].score); 
+		            Result r = new Result(searchTerm,d.get("path"),hits[i].score);
+		            resultList.add(r);
+		        }
+		        
+	        }
+	        catch (Exception e) 
+	        {
+				System.out.println("Error searching \"" + searchTerm + "\": " + e.getMessage() + " - " + e.getLocalizedMessage());
+	        }
+		}
+		
+        System.out.println("");
+        System.out.println("-----------");
+        System.out.println("");
+        // System.out.println("Total hits over all the terms: " + collector.getTotalHits());
+        // System.out.println("");
+        System.out.println("Total results in list: " + resultList.size());
+        System.out.println("");
+        
+        System.out.println("Min score result in list: " + Result.scoreMin(resultList));
+        System.out.println("");
+        
+        System.out.println("Max score result in list: " + Result.scoreMax(resultList));
+        System.out.println("");
+       
+        int rows = Result.resultCSV(resultList, researchType, SCORELIMIT);
+        System.out.println("Rows written from list to CSV file: " + rows);
+		System.out.println("");
         System.out.println("************************");
         
 		
@@ -165,11 +262,12 @@ public class TextFileIndexer
         System.out.println("Documents already indexed: " + originalNumDocs);
         System.out.println("");
         
-        for (File f : queue) {
+        for (File f : queue) 
+        {
             FileReader fr = null;
-            try {
+            try 
+            {
                 Document doc = new Document();
-
                 // Contenuti di un file
                 fr = new FileReader(f);
                 doc.add(new TextField("contents", fr));
