@@ -6,6 +6,11 @@ import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.List;
 
+/**
+ * Classe dei risultati
+ * @author robertonai
+ *
+ */
 public class Result 
 {
 	// Cartella con i CSV dei risultati della ricerca

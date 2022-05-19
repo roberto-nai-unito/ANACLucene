@@ -1,4 +1,9 @@
 
+/**
+ * Classe per il tipo di ricerca (CIG, CF appaltante, DENOMINAZIONE appaltante, CF aggiudicatario, DENOMINAZIONE aggiudicatario
+ * @author robertonai
+ *
+ */
 public class Research 
 {
 	

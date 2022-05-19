@@ -11,7 +11,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-// import org.apache.lucene.search.TopDocs;
+// import org.apache.lucene.search.TopDocs; // attualmente non utilizzata
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.FSDirectory;
@@ -21,6 +21,11 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Classe principale che indicizza i file ed esegue ricerche
+ * @author robertonai
+ *
+ */
 public class TextFileIndexer 
 {
 	
@@ -41,7 +46,7 @@ public class TextFileIndexer
 
 	public static void main(String[] args) throws IOException 
 	{
-		// Cartella dove Lucene salverà l'indicizzazione
+		// Cartella dove Lucene salverà l'indicizzazione dei file (sentenze)
 		String indexLocation = "/Volumes/SAMSUNG-DOC/PhD Informatica 2021/Lucene - Ricerca testi/sentences_txt/Lucene-Index"; 
 		
 		// Cartella contenente i file da indicizzare (le cartelle delle sentenze)
@@ -58,7 +63,7 @@ public class TextFileIndexer
         
         
         // Tipo di dato cercato, vedere Research e ResearchType
-        Research researchType = new Research(ResearchType.AGG_DEN); 
+        Research researchType = new Research(ResearchType.CIG); 
         
         // 1 - INDICIZZAZIONE
         if (indexing==1)

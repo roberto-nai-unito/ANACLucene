@@ -1,4 +1,9 @@
 
+/**
+ * Enum dei tipi di ricerca
+ * @author robertonai
+ *
+ */
 public enum ResearchType 
 {
 	CIG,

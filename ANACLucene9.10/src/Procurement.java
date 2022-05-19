@@ -10,7 +10,11 @@ import java.util.List;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-
+/**
+ * Classe dei bandi pubblici
+ * @author robertonai
+ *
+ */
 public class Procurement 
 {
 	// Cartella dei CSV contenenti i termini da ricercare
