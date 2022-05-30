@@ -1,81 +1,90 @@
-// Librerie Lucene 9.10
+// Librerie Lucene 9.1.0
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
+// import org.apache.lucene.index.DirectoryReader;
+// import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
+// import org.apache.lucene.queryparser.classic.QueryParser;
+//import org.apache.lucene.search.Explanation;
+//import org.apache.lucene.search.IndexSearcher;
+//import org.apache.lucene.search.Query;
 // import org.apache.lucene.search.TopDocs; // attualmente non utilizzata
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopScoreDocCollector;
+//import org.apache.lucene.search.ScoreDoc;
+//import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.FSDirectory;
 
 // Librerie Java standard
 import java.io.*;
 import java.util.ArrayList;
-import java.util.List;
+//import java.util.List;
 
 /**
- * Classe principale che indicizza i file ed esegue ricerche
- * @author robertonai
+ * 
+ * Main class indexing files with Lucene and calling up searches
  *
  */
 public class TextFileIndexer 
 {
 	
-	// Variabile statica (di classe)
 	private static StandardAnalyzer analyzer = new StandardAnalyzer(); // --> IndexWriterConfig
 	
-	private static int fileExc = 0; // contatore dei file esclusi dall'indicizzazione
+	private static int fileExc = 0; // counter of files excluded from indexing
 	
-	// Variabile d'istanza Java ArrayList contenente la lista dei file (da indicizzare) contenuti in una cartella
-    private ArrayList<File> queue = new ArrayList<File>();
+	// ArrayList containing the list of text files (to be indexed)
+    private ArrayList<File> queueTxt = new ArrayList<File>();
     
-	// Variabile d'istanza (Lucene)
+    //  ArrayList containing the list of doc/docx files (to be indexed)
+    private ArrayList<File> queueDoc = new ArrayList<File>();
+    
+    // ArrayList containing the list of pdf files (to be indexed)
+    private ArrayList<File> queuePdf = new ArrayList<File>();
+    
+	// Instance variable (Lucene)
     private IndexWriter writer; // --> IndexWriter
     
-    private final static int SCORETOP = 5; // prende i primi SCORETOP migliori risultati (in base allo score)
+    private final static int SCORETOP = 25; // limit to best scores (get the firs best SCORETOP scores)
     
-    private final static double SCORELIMIT = 5; // limite sotto il quale non considerare il risultato
+    private final static double SCORELIMIT = 0; // limit below which not to consider the result
 
 	public static void main(String[] args) throws IOException 
 	{
-		// Cartella dove Lucene salverà l'indicizzazione dei file (sentenze)
+		// Folder where Lucene will save file indexing (sentences)
 		String indexLocation = "/Volumes/SAMSUNG-DOC/PhD Informatica 2021/Lucene - Ricerca testi/sentences_txt/Lucene-Index"; 
 		
-		// Cartella contenente i file da indicizzare (le cartelle delle sentenze)
+		// Folder containing the files to be indexed (the sentences folders)
         String fileLocation = "/Volumes/SAMSUNG-DOC/PhD Informatica 2021/Python - Giustizia Amministrativa v2/sentences";
 
-        // Creazione del file indice
+        // Creating the index file
         TextFileIndexer indexer = null;
         
-        // Stringa contenente il testo da cercare
-        // String searchTerm = null;
+        // Start indexing (0 = no, 1 = yes)
+        int indexing = 1;
         
-        // Avviare l'indicizzazione (0 = no, 1 = si)
-        int indexing = 0;
+        // Start search (0 = no, 1 = yes)
+        int searching = 0;
         
         
-        // Tipo di dato cercato, vedere Research e ResearchType
-        Research researchType = new Research(ResearchType.CIG); 
+        // Type of data sought, see Research and ResearchType
+        Research researchType = new Research(ResearchType.APP_DEN); 
         
-        // 1 - INDICIZZAZIONE
-        if (indexing==1)
+        // 1 - INDEXING
+        if (indexing == 1)
         {
         	System.out.println("");
             System.out.println("************************");
             System.out.println("1 - INDEXING TASK");
             System.out.println("");
+            long startI = System.currentTimeMillis();
+            System.out.println("Timing initial: " + startI);
+            System.out.println("");
             
             try 
             {
-            	// 1.1 Crea il file indice
+            	// 1.1 Create the index file
                 indexer = new TextFileIndexer(indexLocation); 
             } 
             catch (Exception e) 
@@ -85,7 +94,7 @@ public class TextFileIndexer
             }  
             try 
             {              
-                // 1.1 Indicizza i file
+                // 1.1 Indexing files (the sentences files)
                 indexer.indexFileOrDirectory(fileLocation);  
             } 
     		catch (Exception e) 
@@ -93,144 +102,40 @@ public class TextFileIndexer
     			System.out.println("Error indexing the file \"" + fileLocation + "\": " + e.getMessage());
             }
             
-         
-            // Richiamare sempre closeIndex, altrimenti l'indice non viene creato
+            // 1.3 Always call closeIndex, otherwise the index is not created
             indexer.closeIndex();
+            
+            // timing to finish
+            long endI = System.currentTimeMillis();
+        	// finding the time difference
+            float diffI = endI - startI;
+            // converting it into seconds
+            float secI = diffI / 1000F;
+            // converting it into minutes
+            float minI = secI / 60F;
+            
+            System.out.println("Total time to generate index: " + minI + " minutes (" + secI + " seconds)");
+            System.out.println("");
         }
         
         
-        // 2 - RICERCA
-        
-        System.out.println("");
-        System.out.println("************************");
-        System.out.println("2 - QUERY TASK");
-        System.out.println("");
-        
-        // 2.1 - Estrazione dei dati da cercare
-        
-        // List<String> procurementList = Procurement.getProcurementData(data_in); 
-        List<String> procurementList = Procurement.getProcurementData(researchType); 
-        System.out.println("Number of terms to be searched: " + procurementList.size());
-        System.out.println("");
-        
-        // 2.2 ricerca in Lucene
-        
-        // searchTerm = "Termoidraulica"; 
-        
-        List<Result> resultList = new ArrayList<Result>(); 
-        
-        /*
-        IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexLocation).toPath()));
-        IndexSearcher searcher = new IndexSearcher(reader);
-        TopScoreDocCollector collector = TopScoreDocCollector.create(5, Integer.MAX_VALUE); 
-        // originale (5, 20) --> limiti di migliori hits da considerare (minimo 5, massimo 20)
-        */
-                
-        // singola ricerca (un solo termine)
-        /*
-        String searchTerm = "Termoidraulica"; 
-       
-        try 
+        // 2 - SEACRH
+        if (searching == 1)
         {
-        	Query q = new QueryParser("contents", analyzer).parse(searchTerm);
-	        searcher.search(q, collector);
-	        ScoreDoc[] hits = collector.topDocs().scoreDocs;
-	
-	        // Visualizza i risultati
-	        
-	        System.out.println("Hits found: " + hits.length);
-	        System.out.println("Total hits: " + collector.getTotalHits());
-	   
-	        
-	        System.out.println("");
-	        
-	        for(int i=0; i<hits.length; i++) 
-	        {
-	            int docId = hits[i].doc;
-	            Document d = searcher.doc(docId);
-	            System.out.println((i + 1) + ") " + d.get("path") + ";score=" + hits[i].score); 
-	            Result r = new Result(searchTerm,d.get("path"),hits[i].score);
-	            resultList.add(r);
-	        }
+        	TextFileSearcher.searchPerform(researchType, indexLocation, SCORETOP, analyzer, SCORELIMIT);
         }
-        catch (Exception e) 
-        {
-			System.out.println("Error searching \"" + searchTerm + "\": " + e.getMessage());
-        }
-        */
-       
         
-        // ricerca su più termini
-        int j = 0; // contatore della posizione della ricerca
-        
-        for (String searchTerm : procurementList) 
-		{
-        	j++;
-        	System.out.println("");
-			System.out.println(j + ") Searched term: " + searchTerm);
-	        System.out.println("");
-	        try 
-	        {
-	        	// Attiva gli oggetti per la ricerca
-	        	IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexLocation).toPath()));
-	            IndexSearcher searcher = new IndexSearcher(reader);
-	            TopScoreDocCollector collector = TopScoreDocCollector.create(SCORETOP, Integer.MAX_VALUE); 
-	            // i primi 3 top score fino al massimo (l'originale era 5,20)
-	            
-	        	// Esegue la query sul termine
-	        	Query q = new QueryParser("contents", analyzer).parse(searchTerm);
-		        searcher.search(q, collector);
-		        ScoreDoc[] hits = collector.topDocs().scoreDocs;
-		        
-		        
-		        // Visualizza i risultati
-		        
-		        System.out.println("Hits found: " + hits.length);
-		        // System.out.println("Total hits (overall): " + collector.getTotalHits());
-		        
-		        for(int i=0; i<hits.length;++i) 
-		        {
-		            int docId = hits[i].doc;
-		            Document d = searcher.doc(docId);
-		            System.out.println((i + 1) + ". " + d.get("path") + " score=" + hits[i].score); 
-		            Result r = new Result(searchTerm,d.get("path"),hits[i].score);
-		            resultList.add(r);
-		        }
-		        
-	        }
-	        catch (Exception e) 
-	        {
-				System.out.println("Error searching \"" + searchTerm + "\": " + e.getMessage() + " - " + e.getLocalizedMessage());
-	        }
-		}
-		
         System.out.println("");
-        System.out.println("-----------");
+        System.out.println("Program ended");
         System.out.println("");
-        // System.out.println("Total hits over all the terms: " + collector.getTotalHits());
-        // System.out.println("");
-        System.out.println("Total results in list: " + resultList.size());
-        System.out.println("");
-        
-        System.out.println("Min score result in list: " + Result.scoreMin(resultList));
-        System.out.println("");
-        
-        System.out.println("Max score result in list: " + Result.scoreMax(resultList));
-        System.out.println("");
-       
-        int rows = Result.resultCSV(resultList, researchType, SCORELIMIT);
-        System.out.println("Rows written from list to CSV file: " + rows);
-		System.out.println("");
-        System.out.println("************************");
-        
-		
-	} // fine main()
+	} // main()
 	
 	
 	/**
-     * Costruttore
-     * @param indexDir percorso alla cartella dove salvare l'indice
-     * @throws java.io.IOException in caso di eccezioni nella creazione dell'indice
+     * Constructor
+     * 
+     * @param indexDir: path to the folder where the index is saved
+     * @throws java.io.IOException in case of exceptions in the creation of the index
      */
     TextFileIndexer(String indexDir) throws IOException 
     {
@@ -244,36 +149,38 @@ public class TextFileIndexer
     }
 	
 	 /**
-     * Indicizza i file di una cartella
+     * Indexing files in a folder
+     * 
      * @param fileName the name of a text file or a folder we wish to add to the index
-     * @throws java.io.IOException when exception
+     * @throws java.io.IOException when exception occurs
      */
     public void indexFileOrDirectory(String fileName) throws IOException 
     {
     	int i = 0;
     	
-        // ottiene la lista dei file presenti in una cartella
+        // obtains the list of files in a folder
         addFiles(new File(fileName));
         
         System.out.println("");
-        System.out.println("File indexed from the input directory: " + queue.size());
+        System.out.println("File indexed from the input directory: " + queueTxt.size());
         System.out.println("");
         System.out.println("File exluded from the input directory: " + fileExc);
         System.out.println("");
         
-
-        int originalNumDocs = writer.getDocStats().numDocs; // documenti già indicizzati
+        int originalNumDocs = writer.getDocStats().numDocs; // already indexed documents
         
         System.out.println("Documents already indexed: " + originalNumDocs);
         System.out.println("");
         
-        for (File f : queue) 
+        // indexing TXT files
+        for (File f : queueTxt) 
         {
             FileReader fr = null;
             try 
             {
                 Document doc = new Document();
-                // Contenuti di un file
+                
+                // Contents of a file to be indexed
                 fr = new FileReader(f);
                 doc.add(new TextField("contents", fr));
                 doc.add(new StringField("path", f.getPath(), Field.Store.YES));
@@ -292,20 +199,50 @@ public class TextFileIndexer
                 fr.close();
             }
         }
+        
+        // indexing DOC / DOCX files
+        for (File f : queueDoc) 
+        {
+            try 
+            {
+                Document doc = new Document();
+                 
+                // Contents of a file to be indexed
+                String text = DocFileParser.DocxFileContentParser(f.getAbsolutePath()); // get text from DOC / DOCX
+                doc.add(new TextField("contents", text, Field.Store.YES));
+                doc.add(new StringField("path", f.getPath(), Field.Store.YES));
+                doc.add(new StringField("filename", f.getName(), Field.Store.YES));
 
-        int newNumDocs = writer.getDocStats().numDocs; // documenti aggiunti all'indice
+                writer.addDocument(doc);
+                i++;
+                System.out.println(i+") Added to index file: " + f);
+            } 
+            catch (Exception e) 
+            {
+                System.out.println("Impossible to add file doc to index file: " + f + "\n" + "Error: " + e.getMessage());
+            } 
+        }
+        
+
+        int newNumDocs = writer.getDocStats().numDocs; // documents added to the index
         
         System.out.println("");
+        System.out.println("Number of files TXT to be indexed: " + queueTxt.size());
+        System.out.println("");
+        System.out.println("Number of files DOC to be indexed: " + queueDoc.size());
+        System.out.println("");
+        System.out.println("Number of files PDF to be indexed: " + queuePdf.size());
+        System.out.println("");
         System.out.println("Number of files indexed: " + (newNumDocs - originalNumDocs));
-        // @TODO-0: inserire un timing per verificare il tempo impiegato ad indicizzare
         System.out.println("************************");
 
-        queue.clear();
+        queueTxt.clear();
     }
 
     /**
-     * Metodo ricorsivo che aggiunge alla lista queue i file presenti nella cartella da indicizzare
-     * @param file nome della cartella o del file
+     * Recursive method that adds the files present in the folder to be indexed to the queue list
+     * 
+     * @param file: folder or file name
      */
     
     private void addFiles(File file) 
@@ -326,31 +263,49 @@ public class TextFileIndexer
         else 
         {
             String filename = file.getName().toLowerCase();
+            int ok = 0;
             
-            if (!filename.startsWith("._")) // evita i file temporanei di MacOS
+            if (!filename.startsWith("._")) // avoid MacOS temporary files
             { 
-            	 // solo file di testo
-                if (filename.endsWith(".htm") || filename.endsWith(".html") || filename.endsWith(".xml") || filename.endsWith(".txt")) 
+            	 // Text files
+                if (filename.endsWith(".htm") || filename.endsWith(".html") || filename.endsWith(".txt")) 
                 {
-                    queue.add(file);
-                } 
-                else 
+                    queueTxt.add(file);
+                    ok = 1;
+                }
+                
+                // Word files
+                if (filename.endsWith(".doc") || filename.endsWith(".docx")) 
+                {
+                    queueDoc.add(file);
+                    ok = 1;
+                }
+                
+                // PDF files
+                if (filename.endsWith(".pdf")) 
+                {
+                    queuePdf.add(file);
+                    ok = 1;
+                }
+                
+                if (ok == 0)
                 {
                 	fileExc++;
-                    System.out.println(fileExc + ") File skipped (not in htm / txt / xml format) from indexing: " + filename);
+                    System.out.println(fileExc + ") File skipped (not in htm / txt / doc (docx) / pdf) from indexing: \"" + filename +"\"");
                 } 
-                // @TODO-3: verificare se e come indicizzare doc/docx e pdf
             }
         }
     }
 
     /**
-     * Chiude l'indice
+     * Closes the index (mandatory to generate the index)
+     * 
      * @throws java.io.IOException 
      */
     public void closeIndex() throws IOException 
     {
         writer.close();
     }
+    
 
-} // fine classe TextFileIndexer
+} // end class TextFileIndexer

@@ -1,7 +1,7 @@
 
 /**
- * Classe per il tipo di ricerca (CIG, CF appaltante, DENOMINAZIONE appaltante, CF aggiudicatario, DENOMINAZIONE aggiudicatario
- * @author robertonai
+ * 
+ * Class for the type of search (CIG, Public entity CF, Public entity DENOMINATION, Private company CF, Private company DENOMINATION)
  *
  */
 public class Research 
@@ -9,7 +9,7 @@ public class Research
 	
 	ResearchType researchType;
 	
-	// Costruttore
+	// Constructor
 	public Research(ResearchType researchType) 
 	{
         this.researchType = researchType;

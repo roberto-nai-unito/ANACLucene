@@ -1,7 +1,6 @@
 
 /**
- * Enum dei tipi di ricerca
- * @author robertonai
+ * Enum of search types
  *
  */
 public enum ResearchType 

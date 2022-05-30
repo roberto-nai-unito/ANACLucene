@@ -1,37 +1,27 @@
-/**
- * 
- * @author robertonai
- *
- */
-
-// Librerie Java standard
 import java.io.*;
 import java.util.List;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 /**
- * Classe dei bandi pubblici
- * @author robertonai
- *
+ * Class for public tenders (procurement)
  */
 public class Procurement 
 {
-	// Cartella dei CSV contenenti i termini da ricercare
+	// Folder containing the input CSV with terms to be found
 	private static String inputDir = "/Volumes/SAMSUNG-DOC/PhD Informatica 2021/Lucene - Ricerca testi/input"; 
 	
-	// File CSV
+	// CSV
 	private static String inputFileCIG = "cig_vs_appaltanti.csv"; // [0] bando_cig / CIG
 	private static String inputFileAppCF = "cf_vs_appaltanti.csv"; 	// [1] bando_cig / CF
 	private static String inputFileAppDe = "denominazioni_vs_appaltanti.csv"; // [2] stazione_appaltante / denominazione
-	// private static String inputFileAppDe = "denominazioni_vs_appaltanti_TEST.csv";  // [2] stazione_appaltante / denominazione
 	private static String inputFileAggDe = "denominazioni_vs_aggiudicatari.csv"; // [3] aggiudicatari / denominazione
 	private static String inputFileAggCF = "cf_vs_aggiudicatari.csv"; // [4] aggiudicatari / cf
 	
 	/**
-	 * Estrare la lista dei dati dal csv
-	 * @input data (0 --> CIG, 1 --> CF)
-	 * @return lista dei dati (CIG o CF)
+	 * Get the list of terms to be found following the research type
+	 * @input researchType
+	 * @return list of terms
 	 */
 	// public static List<String> getProcurementData(int data)
 	public static List<String> getProcurementData(Research researchType)
@@ -69,7 +59,7 @@ public class Procurement
 			{
 				List<String> procurementList =  Files.readAllLines(Paths.get(inputPath));
 				
-				// procurementList.remove(0); // se l'elemento 0 contiene l'intestazione viene rimosso
+				// procurementList.remove(0); // remove element(0) if it's the header
 				
 				// debug
 				/*
@@ -92,4 +82,4 @@ public class Procurement
 	}
 	
 	
-} // fine classe
+} 

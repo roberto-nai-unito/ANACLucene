@@ -7,21 +7,20 @@ import java.text.DecimalFormat;
 import java.util.List;
 
 /**
- * Classe dei risultati
- * @author robertonai
+ * Class Results: collects the results from the Lucene query
  *
  */
 public class Result 
 {
-	// Cartella con i CSV dei risultati della ricerca
+	// Folder with CSV search results
 	private static String outputDir = "/Volumes/SAMSUNG-DOC/PhD Informatica 2021/Lucene - Ricerca testi/output";
 	private static String outputFileName = "results";
 	private static String outputFileExt = "csv";
 	private final static String CSVSEPARATOR = ";";
 	
-	// Variabili d'istanza	
-	private String term; 	// termine cercato
-	private String file;	// file in cui è stato trovato il termine
+	// Instance variables	
+	private String term; 	// search terms
+	private String file;	// file where the term was found
 	private double score; 	// Lucene score
 	
 	// Costruttore
@@ -49,8 +48,9 @@ public class Result
 	}
 	
 	/**
-	 * 
-	 * @return stringa in formato CSV
+	 * String in CSV format
+	 * @input researchType: research type
+	 * @return String in CSV format
 	 */
 	public String toCSV(Research researchType) 
 	{
@@ -58,9 +58,10 @@ public class Result
 	}
 	
 	/**
+	 * Given a complete path, extract filename and folder of the found term
 	 * 
-	 * @slice posizione del valore da estrarre; 1 il nome del file, 2 la cartella
-	 * @return stringa contenente il nome del file (della sentenza)
+	 * @slice location of the value to be extracted; 1 the file name, 2 the folder
+	 * @return string containing the file name (of the judgment)
 	 */
 	public static String fileToFileName(String file, int slice)
 	{
@@ -72,40 +73,42 @@ public class Result
 		} 
 		catch (Exception e) 
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Exception in fileToFileName: " + e.getMessage());
+			System.out.println("");
 		}
 		return null;
 	}
 	
 	/**
+	 * Given a double number, returns the rounded number
 	 * 
-	 * @param n numero di partenza
-	 * @return stringa formattata del numero di partenza
+	 * @param n: number in input
+	 * @return formatted string of the number in input
 	 */
 	public static String scoreRound(Number n)
 	{
-		DecimalFormat df = new DecimalFormat("#.##");
+		DecimalFormat df = new DecimalFormat("#.###");
 		Double d = n.doubleValue();
 	    return df.format(d);
 	}
 	
 	
 	/**
+	 * Given a list of results, save on CSV file the data
 	 * 
-	 * @param resultList lista dei risultati
-	 * @param researchType tipo di ricerca (enum)
-	 * @param scoreLimit score entro cui escludere il risultato
-	 * @return numero di righe scritte nel file CSV
+	 * @param resultList: results list
+	 * @param researchType: search type (enum)
+	 * @param scoreLimit: score within which to exclude the result
+	 * @return number of lines written in the CSV file
 	 */
 	public static int resultCSV(List<Result> resultList, Research researchType, double scoreLimit)
 	{
 		String fileName = outputDir + "/" + outputFileName + "_" + researchType.toString() + "." + outputFileExt;
 		
-		int i = 0; // contatore delle line scritte
-		int j = 0; // numero di elementi esclusi (score basso)
+		int i = 0; // written lines counter
+		int j = 0; // number of items excluded (score < scoreLimit)
 		
-		// cancella il file se esiste già 
+		// delete the file if it already exists 
 		File file = new File(fileName);
 		try 
 		{
@@ -119,7 +122,7 @@ public class Result
 		} 
 		catch (IOException e1) 
 		{
-			System.out.println("Unable to delete file already existing \": " + file.toPath() +"\"");
+			System.out.println("Exception in resultCSV --> Unable to delete file already existing \": " + file.toPath() +"\"");
 			System.out.println("");
 			e1.printStackTrace();
 		}
@@ -132,20 +135,22 @@ public class Result
 				continue;
 			}
 			String csvLine = result.toCSV(researchType);
-			// System.out.println(result.toString());
+			
+			// System.out.println(csvLine.toString()); // debug
 			// System.out.println("");
+			
 			BufferedWriter writer;
 			try 
 			{
-				writer = new BufferedWriter(new FileWriter(fileName, true)); // true è per la modalità append
+				writer = new BufferedWriter(new FileWriter(fileName, true)); // true is for append mode
 				writer.write(csvLine);
 				i++;
-				writer.close(); // scrive il contenuto sul file
+				writer.close(); // writes the content to the file
 			} 
 			catch (IOException e) 
 			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println("Exception in resultCSV --> Saving data to CSV: " + e.getMessage());
+				System.out.println("");
 			}
 		}
 		
@@ -154,6 +159,12 @@ public class Result
 		return i;
 	}
 	
+	/**
+	 * Returns the maximum score
+	 * 
+	 * @param resultList: results list
+	 * @return maximum value
+	 */
 	public static double scoreMax(List<Result> resultList)
 	{
 		double maxScore = resultList.get(0).getScore();
@@ -167,6 +178,12 @@ public class Result
 		return maxScore;
 	}
 	
+	/**
+	 * Returns the minimum score
+	 * 
+	 * @param resultList: results list
+	 * @return minimum value
+	 */
 	public static double scoreMin(List<Result> resultList)
 	{
 		double minScore = resultList.get(0).getScore();
