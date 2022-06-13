@@ -12,9 +12,10 @@ import java.util.List;
  */
 public class Result 
 {
+
 	// Folder with CSV search results
 	private static String outputDir = "/Volumes/SAMSUNG-DOC/PhD Informatica 2021/Lucene - Ricerca testi/output";
-	private static String outputFileName = "results";
+	private static String outputFileName = "Lucene_results";
 	private static String outputFileExt = "csv";
 	private final static String CSVSEPARATOR = ";";
 	
@@ -31,7 +32,7 @@ public class Result
 		this.score = score;
 	}
 	
-	// Getter e Setter
+	// Getter and Setter
 	public double getScore() 
 	{
 		return score;
@@ -40,6 +41,22 @@ public class Result
 	public void setScore(double score) 
 	{
 		this.score = score;
+	}
+	
+	public String getTerm() {
+		return term;
+	}
+
+	public void setTerm(String term) {
+		this.term = term;
+	}
+
+	public String getFile() {
+		return file;
+	}
+
+	public void setFile(String file) {
+		this.file = file;
 	}
 	
 	@Override
@@ -54,7 +71,8 @@ public class Result
 	 */
 	public String toCSV(Research researchType) 
 	{
-		return researchType.toString()+CSVSEPARATOR+term+CSVSEPARATOR+fileToFileName(file,2)+CSVSEPARATOR+fileToFileName(file,1)+CSVSEPARATOR+scoreRound(score)+System.lineSeparator();
+		// return researchType.toString()+CSVSEPARATOR+term+CSVSEPARATOR+fileToFileName(file,2)+CSVSEPARATOR+fileToFileName(file,1)+CSVSEPARATOR+scoreRound(score)+System.lineSeparator();
+		return term+CSVSEPARATOR+fileToFileName(file,2)+CSVSEPARATOR+fileToFileName(file,1)+CSVSEPARATOR+scoreRound(score)+System.lineSeparator();
 	}
 	
 	/**
@@ -92,6 +110,36 @@ public class Result
 	    return df.format(d);
 	}
 	
+	/**
+	 * @param resultList: list with results of a query
+	 * @param r: last result found with Lucene
+	 * @return 1 if already exist a better score for the couple (term, path), 0 otherwise (no couple or worst 
+	 */
+	public static int checkBestScore(List<Result> resultList, Result r)
+	{
+		if (resultList.size() == 0)
+		{
+			resultList.add(r);
+			return 0;
+		}
+		else
+		{
+			for (Result result : resultList) 
+			{
+				if (result.getTerm().equals(r.getTerm()) && result.getFile().equals(r.getFile())) // if the same result is already available in the list
+				{	
+					if (result.getScore() < r.getScore()) // if the score in the list is lower than the one in the result r just obtained from Lucene
+					{
+						resultList.remove(result);
+						resultList.add(r);
+						return 1;
+					}
+				}
+			}
+			resultList.add(r);
+			return 0;
+		}
+	}
 	
 	/**
 	 * Given a list of results, save on CSV file the data
@@ -99,11 +147,12 @@ public class Result
 	 * @param resultList: results list
 	 * @param researchType: search type (enum)
 	 * @param scoreLimit: score within which to exclude the result
+	 * @param scoretop: value of the top scores included
 	 * @return number of lines written in the CSV file
 	 */
-	public static int resultCSV(List<Result> resultList, Research researchType, double scoreLimit)
+	public static int resultCSV(List<Result> resultList, Research researchType, double scoreLimit, int scoretop)
 	{
-		String fileName = outputDir + "/" + outputFileName + "_" + researchType.toString() + "." + outputFileExt;
+		String fileName = outputDir + "/" + outputFileName + "_" + researchType.toString() + "_top-" + scoretop + "_limit-" + scoreLimit + "." + outputFileExt;
 		
 		int i = 0; // written lines counter
 		int j = 0; // number of items excluded (score < scoreLimit)
@@ -129,11 +178,13 @@ public class Result
 		
 		for (Result result : resultList) 
 		{
+			
 			if (result.getScore() < scoreLimit)
 			{
 				j++;
 				continue;
 			}
+			
 			String csvLine = result.toCSV(researchType);
 			
 			// System.out.println(csvLine.toString()); // debug

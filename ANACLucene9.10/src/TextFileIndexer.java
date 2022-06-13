@@ -4,10 +4,13 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 // import org.apache.lucene.index.DirectoryReader;
 // import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.store.Directory;
 // import org.apache.lucene.queryparser.classic.QueryParser;
 //import org.apache.lucene.search.Explanation;
 //import org.apache.lucene.search.IndexSearcher;
@@ -19,6 +22,7 @@ import org.apache.lucene.store.FSDirectory;
 
 // Librerie Java standard
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 //import java.util.List;
 
@@ -46,9 +50,9 @@ public class TextFileIndexer
 	// Instance variable (Lucene)
     private IndexWriter writer; // --> IndexWriter
     
-    private final static int SCORETOP = 25; // limit to best scores (get the firs best SCORETOP scores)
+    private final static int SCORETOP = 20; // limit to best scores (get the first best SCORETOP scores)
     
-    private final static double SCORELIMIT = 0; // limit below which not to consider the result
+    private final static double SCORELIMIT = 5; // limit below which not to consider the result
 
 	public static void main(String[] args) throws IOException 
 	{
@@ -62,10 +66,13 @@ public class TextFileIndexer
         TextFileIndexer indexer = null;
         
         // Start indexing (0 = no, 1 = yes)
-        int indexing = 1;
+        int indexing = 0;
+        
+        // Show indexing (0 = no, 1 = yes)
+        int indexingShow = 0;
         
         // Start search (0 = no, 1 = yes)
-        int searching = 0;
+        int searching = 1;
         
         
         // Type of data sought, see Research and ResearchType
@@ -118,8 +125,35 @@ public class TextFileIndexer
             System.out.println("");
         }
         
+        // 2 - SHOW TERMS INDEX
         
-        // 2 - SEACRH
+        if (indexingShow == 1)
+        {
+        	StringBuilder sbTerms = new StringBuilder();
+            
+            FSDirectory indexDir = FSDirectory.open(Paths.get(indexLocation));
+            
+            IndexReader reader = DirectoryReader.open(indexDir);
+
+            sbTerms.append("Path , Parent \n" );
+            for( int i = 0; i <reader.maxDoc(); i++)  
+            {
+                Document doc = reader.document(i);
+
+                String docPath = doc.get("path");
+                String docParent = doc.get("contents");
+
+                sbTerms.append(docPath + "," + docParent + "\n");
+            }
+            
+            System.out.println("Terms indexed");
+            System.out.println("");
+            System.out.println(sbTerms.toString());
+            System.out.println("");
+        }
+        
+        
+        // 3 - SEACRH
         if (searching == 1)
         {
         	TextFileSearcher.searchPerform(researchType, indexLocation, SCORETOP, analyzer, SCORELIMIT);
@@ -229,7 +263,7 @@ public class TextFileIndexer
         System.out.println("");
         System.out.println("Number of files TXT to be indexed: " + queueTxt.size());
         System.out.println("");
-        System.out.println("Number of files DOC to be indexed: " + queueDoc.size());
+        System.out.println("Number of files DOC/DOCX to be indexed: " + queueDoc.size());
         System.out.println("");
         System.out.println("Number of files PDF to be indexed: " + queuePdf.size());
         System.out.println("");
