@@ -20,14 +20,16 @@ public class Result
 	private final static String CSVSEPARATOR = ";";
 	
 	// Instance variables	
-	private String term; 	// search terms
-	private String file;	// file where the term was found
-	private double score; 	// Lucene score
+	private String termCode; 	// search term code (CF or CIG)
+	private String termName;	// search term name (or CIG)
+	private String file;		// file where the term was found
+	private double score; 		// Lucene score
 	
 	// Costruttore
-	public Result(String term, String file, double score) {
+	public Result(String termCode, String termName, String file, double score) {
 		super();
-		this.term = term;
+		this.termCode = termCode;
+		this.termName = termName;
 		this.file = file;
 		this.score = score;
 	}
@@ -43,12 +45,12 @@ public class Result
 		this.score = score;
 	}
 	
-	public String getTerm() {
-		return term;
+	public String getTermCode() {
+		return termCode;
 	}
 
-	public void setTerm(String term) {
-		this.term = term;
+	public void setTermCode(String termCode) {
+		this.termCode = termCode;
 	}
 
 	public String getFile() {
@@ -59,9 +61,17 @@ public class Result
 		this.file = file;
 	}
 	
+	public String getTermName() {
+		return termName;
+	}
+
+	public void setTermName(String termName) {
+		this.termName = termName;
+	}
+	
 	@Override
 	public String toString() {
-		return "Result [term=" + term + ", file=" + file + ", score=" + score + "]";
+		return "Result [term=" + termCode + ", file=" + file + ", score=" + score + "]";
 	}
 	
 	/**
@@ -72,7 +82,9 @@ public class Result
 	public String toCSV(Research researchType) 
 	{
 		// return researchType.toString()+CSVSEPARATOR+term+CSVSEPARATOR+fileToFileName(file,2)+CSVSEPARATOR+fileToFileName(file,1)+CSVSEPARATOR+scoreRound(score)+System.lineSeparator();
-		return term+CSVSEPARATOR+fileToFileName(file,2)+CSVSEPARATOR+fileToFileName(file,1)+CSVSEPARATOR+scoreRound(score)+System.lineSeparator();
+		// return termCode+CSVSEPARATOR+fileToFileName(file,2)+CSVSEPARATOR+fileToFileName(file,1)+CSVSEPARATOR+scoreRound(score)+System.lineSeparator();
+		// return termCode+CSVSEPARATOR+termName+CSVSEPARATOR+fileToFileName(file,2)+CSVSEPARATOR+fileToFileName(file,1)+System.lineSeparator();
+		return "\""+termCode + "\"" + CSVSEPARATOR + "\"" + termName + "\"" +CSVSEPARATOR + "\"" + fileToFileName(file,1) + "\"" + System.lineSeparator();
 	}
 	
 	/**
@@ -126,18 +138,21 @@ public class Result
 		{
 			for (Result result : resultList) 
 			{
-				if (result.getTerm().equals(r.getTerm()) && result.getFile().equals(r.getFile())) // if the same result is already available in the list
+				if (result.getTermCode().equals(r.getTermCode()) && result.getTermName().equals(r.getTermName()) && result.getFile().equals(r.getFile())) // if the same result is already available in the list
 				{	
-					if (result.getScore() < r.getScore()) // if the score in the list is lower than the one in the result r just obtained from Lucene
+					if (result.getScore() <= r.getScore()) // if the score in the list is lower than the one in the result r just obtained from Lucene
 					{
 						resultList.remove(result);
-						resultList.add(r);
+						return 1;
+					}
+					if (result.getScore() > r.getScore()) // if the score in the list is higher the one in the actual result r just obtained from Lucene
+					{
+						// the result should not be added because the one in the list is higher
 						return 1;
 					}
 				}
 			}
-			resultList.add(r);
-			return 0;
+		   return 0; // Result match not found
 		}
 	}
 	
